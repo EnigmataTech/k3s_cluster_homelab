@@ -125,7 +125,7 @@ data:
     ENABLE_OPENID_SIGNUP = false
 
     [oauth2]
-    ENABLE = true
+    ENABLED = true
     ACCESS_TOKEN_EXPIRATION_TIME = 3600
     REFRESH_TOKEN_EXPIRATION_TIME = 730
 
@@ -144,7 +144,6 @@ data:
     REPO_INDEXER_ENABLED = true
     REPO_INDEXER_TYPE = bleve
     REPO_INDEXER_PATH = /data/indexers/repos.bleve
-    UPDATE_BUFFER_LEN = 20
     MAX_FILE_SIZE = 1048576
 
     [webhook]
