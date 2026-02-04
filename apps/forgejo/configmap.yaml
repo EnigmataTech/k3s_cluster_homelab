@@ -1,0 +1,156 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-config
+  namespace: forgejo
+  labels:
+    app: forgejo
+data:
+  app.ini: |
+    APP_NAME = Forgejo: Beyond coding. We forge.
+    RUN_MODE = prod
+    RUN_USER = git
+
+    [server]
+    DOMAIN = git.dev.enigmata.pro
+    ROOT_URL = https://git.dev.enigmata.pro/
+    HTTP_PORT = 3000
+    DISABLE_SSH = false
+    SSH_PORT = 22
+    SSH_LISTEN_PORT = 22
+    START_SSH_SERVER = true
+    LFS_START_SERVER = true
+    OFFLINE_MODE = false
+
+    [database]
+    DB_TYPE = postgres
+    HOST = postgresql.forgejo.svc.cluster.local:5432
+    NAME = forgejo
+    USER = forgejo
+    SCHEMA = public
+    SSL_MODE = disable
+    LOG_SQL = false
+
+    [cache]
+    ENABLED = true
+    ADAPTER = redis
+    HOST = redis://redis.forgejo.svc.cluster.local:6379/0
+    ITEM_TTL = 16h
+
+    [session]
+    PROVIDER = redis
+    PROVIDER_CONFIG = redis://redis.forgejo.svc.cluster.local:6379/1
+    COOKIE_SECURE = true
+    COOKIE_NAME = forgejo_session
+    COOKIE_USERNAME = forgejo_username
+    SAME_SITE = lax
+
+    [queue]
+    TYPE = redis
+    CONN_STR = redis://redis.forgejo.svc.cluster.local:6379/2
+    LENGTH = 1000
+
+    [queue.issue_indexer]
+    TYPE = redis
+    CONN_STR = redis://redis.forgejo.svc.cluster.local:6379/3
+    BATCH_LENGTH = 20
+
+    [queue.mailer]
+    TYPE = redis
+    CONN_STR = redis://redis.forgejo.svc.cluster.local:6379/4
+    LENGTH = 1000
+    BATCH_LENGTH = 100
+
+    [security]
+    INSTALL_LOCK = true
+    PASSWORD_HASH_ALGO = argon2
+    REVERSE_PROXY_LIMIT = 1
+    REVERSE_PROXY_TRUSTED_PROXIES = *
+
+    [service]
+    DISABLE_REGISTRATION = false
+    REQUIRE_SIGNIN_VIEW = false
+    REGISTER_EMAIL_CONFIRM = false
+    ENABLE_NOTIFY_MAIL = false
+    DEFAULT_KEEP_EMAIL_PRIVATE = true
+    DEFAULT_ALLOW_CREATE_ORGANIZATION = true
+    DEFAULT_ENABLE_TIMETRACKING = true
+    NO_REPLY_ADDRESS = noreply.git.dev.enigmata.pro
+
+    [repository]
+    ROOT = /data/git/repositories
+    DEFAULT_BRANCH = main
+    DEFAULT_PRIVATE = private
+    ENABLE_PUSH_CREATE_USER = true
+    ENABLE_PUSH_CREATE_ORG = true
+
+    [repository.local]
+    LOCAL_COPY_PATH = /data/tmp/local-repo
+
+    [repository.upload]
+    TEMP_PATH = /data/tmp/uploads
+
+    [repository.signing]
+    SIGNING_KEY = default
+    SIGNING_NAME = Forgejo
+    SIGNING_EMAIL = forgejo@git.dev.enigmata.pro
+    INITIAL_COMMIT = always
+    CRUD_ACTIONS = pubkey, twofa, parentsigned
+    WIKI = never
+    MERGES = pubkey, twofa, basesigned, commitssigned
+
+    [log]
+    MODE = console
+    LEVEL = Info
+    ROOT_PATH = /data/log
+
+    [git]
+    MAX_GIT_DIFF_LINES = 1000
+    MAX_GIT_DIFF_LINE_CHARACTERS = 5000
+    MAX_GIT_DIFF_FILES = 100
+    GC_ARGS =
+
+    [attachment]
+    ENABLED = true
+    PATH = /data/attachments
+    MAX_SIZE = 4
+    MAX_FILES = 5
+
+    [mailer]
+    ENABLED = false
+
+    [openid]
+    ENABLE_OPENID_SIGNIN = false
+    ENABLE_OPENID_SIGNUP = false
+
+    [oauth2]
+    ENABLE = true
+    ACCESS_TOKEN_EXPIRATION_TIME = 3600
+    REFRESH_TOKEN_EXPIRATION_TIME = 730
+
+    [actions]
+    ENABLED = true
+    DEFAULT_ACTIONS_URL = https://code.forgejo.org
+
+    [ui]
+    DEFAULT_THEME = forgejo-auto
+    THEMES = forgejo-auto,forgejo-light,forgejo-dark,gitea-auto,gitea-light,gitea-dark
+    SHOW_USER_EMAIL = false
+
+    [indexer]
+    ISSUE_INDEXER_TYPE = bleve
+    ISSUE_INDEXER_PATH = /data/indexers/issues.bleve
+    REPO_INDEXER_ENABLED = true
+    REPO_INDEXER_TYPE = bleve
+    REPO_INDEXER_PATH = /data/indexers/repos.bleve
+    UPDATE_BUFFER_LEN = 20
+    MAX_FILE_SIZE = 1048576
+
+    [webhook]
+    ALLOWED_HOST_LIST = *
+    SKIP_TLS_VERIFY = false
+
+    [other]
+    SHOW_FOOTER_VERSION = true
+    SHOW_FOOTER_TEMPLATE_LOAD_TIME = false

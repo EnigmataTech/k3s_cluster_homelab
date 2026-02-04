@@ -1,0 +1,26 @@
+# MetalLB Configuration
+# IP Address Pool and L2 Advertisement
+# Applied to metallb-system namespace
+#
+# This configuration provides LoadBalancer IPs in the range 192.168.1.240-250
+# L2 mode announces these IPs on the local network
+
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.1.240-192.168.1.250
+
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: default
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - default-pool

@@ -1,0 +1,29 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: forgejo
+  namespace: forgejo
+  labels:
+    app: forgejo
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-dns01-staging"  # Use staging first, then switch to production
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # Allow HTTP during testing, change to "true" for production
+    nginx.ingress.kubernetes.io/proxy-body-size: "512m"  # Allow large Git pushes
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - git.dev.enigmata.pro
+    secretName: forgejo-dev-enigmata-pro-tls
+  rules:
+  - host: git.dev.enigmata.pro
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: forgejo
+            port:
+              number: 3000
