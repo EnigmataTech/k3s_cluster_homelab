@@ -41,9 +41,17 @@ spec:
           mkdir -p /data/git/repositories /data/git/lfs /data/git/.ssh /data/tmp /data/log /data/attachments /data/indexers /data/gitea
           chown -R 1000:1000 /data
           chmod -R 755 /data
+          # Copy configmap to writable location for environment-to-ini
+          mkdir -p /gitea-conf
+          cp /config-ro/app.ini /gitea-conf/app.ini
+          chown 1000:1000 /gitea-conf/app.ini
         volumeMounts:
         - name: data
           mountPath: /data
+        - name: config-ro
+          mountPath: /config-ro
+        - name: config
+          mountPath: /gitea-conf
         securityContext:
           runAsUser: 0
           privileged: true
@@ -84,8 +92,7 @@ spec:
         - name: data
           mountPath: /data
         - name: config
-          mountPath: /var/lib/gitea/custom/conf/app.ini
-          subPath: app.ini
+          mountPath: /var/lib/gitea/custom/conf
         - name: temp
           mountPath: /tmp
         resources:
@@ -118,8 +125,10 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: forgejo-data
-      - name: config
+      - name: config-ro
         configMap:
           name: forgejo-config
+      - name: config
+        emptyDir: {}
       - name: temp
         emptyDir: {}
