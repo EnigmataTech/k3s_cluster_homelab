@@ -1,0 +1,163 @@
+# Example: Testing cert-manager with TLS Ingress
+# This creates a simple whoami application with automatic TLS certificate
+#
+# How to use:
+# 1. Update the host field to your actual domain
+# 2. Ensure DNS points to your ingress IP (192.168.1.241)
+# 3. Apply with: kubectl apply -f test-ingress-tls.yaml
+# 4. Test with staging first, then switch to production
+#
+# cert-manager will automatically:
+# - Create a Certificate resource
+# - Request certificate from Let's Encrypt
+# - Complete HTTP-01 challenge
+# - Store certificate in TLS secret
+# - Renew certificate before expiry
+
+---
+# Namespace for test application
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: whoami-test
+
+---
+# Whoami Deployment - simple HTTP server that returns request info
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami
+  namespace: whoami-test
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: whoami
+  template:
+    metadata:
+      labels:
+        app: whoami
+    spec:
+      containers:
+      - name: whoami
+        image: traefik/whoami:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "50m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
+
+---
+# Service to expose whoami pods
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami
+  namespace: whoami-test
+spec:
+  selector:
+    app: whoami
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+
+---
+# Ingress with TLS - using STAGING issuer (test first!)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: whoami-tls-staging
+  namespace: whoami-test
+  annotations:
+    # This annotation tells cert-manager to automatically create a certificate
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+
+    # Optional: Force HTTPS redirect
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+
+    # Optional: SSL protocols and ciphers
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - whoami.example.com  # CHANGE THIS to your actual domain
+    secretName: whoami-tls-staging  # cert-manager will create this secret
+  rules:
+  - host: whoami.example.com  # CHANGE THIS to your actual domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: whoami
+            port:
+              number: 80
+
+---
+# Ingress with TLS - PRODUCTION issuer (use after testing!)
+# To use this instead of staging:
+# 1. Comment out the whoami-tls-staging Ingress above
+# 2. Uncomment this entire resource
+# 3. Update the host to your domain
+# 4. Apply the manifest
+
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: whoami-tls-production
+#   namespace: whoami-test
+#   annotations:
+#     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+#     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+#     nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+# spec:
+#   ingressClassName: nginx
+#   tls:
+#   - hosts:
+#     - whoami.example.com  # CHANGE THIS to your actual domain
+#     secretName: whoami-tls-prod  # cert-manager will create this secret
+#   rules:
+#   - host: whoami.example.com  # CHANGE THIS to your actual domain
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: whoami
+#             port:
+#               number: 80
+
+---
+# How to verify certificate issuance:
+#
+# 1. Watch certificate creation:
+#    kubectl get certificate -n whoami-test -w
+#
+# 2. Check certificate details:
+#    kubectl describe certificate whoami-tls-staging -n whoami-test
+#
+# 3. Check certificate request:
+#    kubectl get certificaterequest -n whoami-test
+#
+# 4. View ACME challenge:
+#    kubectl get challenges -n whoami-test
+#
+# 5. Check cert-manager logs if issues:
+#    kubectl logs -n cert-manager -l app=cert-manager -f
+#
+# 6. Test HTTPS access:
+#    curl -v https://whoami.example.com
+#    (staging cert will show as untrusted - this is expected)
+#
+# Expected Certificate states:
+# - Pending: Initial state, waiting for issuance
+# - Ready: Certificate issued and stored in secret
+# - Failed: Check describe output for errors

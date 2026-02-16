@@ -1,0 +1,26 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-dns01-staging"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # Cloudflare Tunnel handles TLS
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - grafana.enigmata.pro
+    secretName: grafana-enigmata-pro-tls
+  rules:
+  - host: grafana.enigmata.pro
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kube-prometheus-stack-grafana
+            port:
+              number: 80

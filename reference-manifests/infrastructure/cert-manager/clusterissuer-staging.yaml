@@ -1,0 +1,27 @@
+# Let's Encrypt Staging ClusterIssuer
+# Use this issuer for testing to avoid rate limits
+# Staging certificates will show as untrusted in browsers
+#
+# IMPORTANT: Replace user@example.com with your actual email address
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    # Let's Encrypt staging server (no rate limits)
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+
+    # CHANGE THIS: Your email address for Let's Encrypt notifications
+    email: EnigmataTech@protonmail.com
+
+    # Secret to store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-staging
+
+    # HTTP-01 challenge solver using nginx ingress
+    solvers:
+    - http01:
+        ingress:
+          class: nginx

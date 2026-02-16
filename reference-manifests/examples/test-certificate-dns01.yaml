@@ -1,0 +1,15 @@
+---
+# Test Certificate using DNS-01 Challenge
+# This will create a TXT record in Cloudflare DNS to prove domain ownership
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: test-dev-enigmata-pro
+  namespace: default
+spec:
+  secretName: test-dev-enigmata-pro-tls
+  issuerRef:
+    name: letsencrypt-dns01-staging
+    kind: ClusterIssuer
+  dnsNames:
+  - dev.enigmata.pro

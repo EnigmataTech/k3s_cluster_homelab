@@ -1,0 +1,8 @@
+# cert-manager Namespace
+# Note: This namespace is already created by the cert-manager installation manifest
+# This file is kept for GitOps reference and declarative management
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
