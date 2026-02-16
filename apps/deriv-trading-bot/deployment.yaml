@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deriv-trading-bot
+  namespace: deriv-trading-bot
+  labels:
+    app: deriv-trading-bot
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: deriv-trading-bot
+  template:
+    metadata:
+      labels:
+        app: deriv-trading-bot
+    spec:
+      containers:
+      - name: deriv-trading-bot
+        image: enigmata/deriv-trading-bot:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        envFrom:
+        - secretRef:
+            name: deriv-trading-bot-secrets
+        env:
+        - name: DATABASE_URL
+          value: "sqlite:////app/data/trading_database.db"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: PORT
+          value: "8000"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: ENABLE_TRADE_MONITOR
+          value: "true"
+        - name: TRADE_MONITOR_INTERVAL
+          value: "30"
+        - name: MAX_DAILY_LOSS
+          value: "100"
+        - name: MAX_DAILY_TRADES
+          value: "50"
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      imagePullSecrets:
+      - name: dockerhub-credentials
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: deriv-trading-bot-data
