@@ -5,4 +5,5 @@ resources:
   - longhorn
   - cert-manager
   - ingress-nginx
+  - monitoring
   - cloudflare-tunnel
