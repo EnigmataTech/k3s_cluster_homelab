@@ -1,0 +1,40 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices"
+  ],
+  "kubernetes": {
+    "fileMatch": ["\\.yaml$"]
+  },
+  "flux": {
+    "fileMatch": ["\\.yaml$"]
+  },
+  "packageRules": [
+    {
+      "description": "Group all Flux infrastructure updates together",
+      "matchPaths": ["infrastructure/**"],
+      "groupName": "infrastructure dependencies",
+      "groupSlug": "infrastructure"
+    },
+    {
+      "description": "Group all app updates together",
+      "matchPaths": ["apps/**"],
+      "groupName": "app dependencies",
+      "groupSlug": "apps"
+    },
+    {
+      "description": "Auto-merge Renovate's own patch updates",
+      "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "description": "Pin digests for all container images",
+      "matchManagers": ["kubernetes"],
+      "pinDigests": false
+    }
+  ],
+  "labels": ["renovate", "dependencies"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2
+}
