@@ -7,8 +7,8 @@ metadata:
   labels:
     app: forgejo
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-dns01-staging"  # Use staging first, then switch to production
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # Allow HTTP during testing, change to "true" for production
+    cert-manager.io/cluster-issuer: "letsencrypt-dns01-production"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "512m"  # Allow large Git pushes
 spec:
   ingressClassName: nginx
