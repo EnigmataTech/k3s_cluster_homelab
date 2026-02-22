@@ -4,37 +4,54 @@
     "config:best-practices"
   ],
   "kubernetes": {
-    "fileMatch": ["\\.yaml$"]
+    "fileMatch": [
+      "\\.yaml$"
+    ]
   },
   "flux": {
-    "fileMatch": ["\\.yaml$"]
+    "fileMatch": [
+      "\\.yaml$"
+    ]
   },
   "packageRules": [
     {
       "description": "Group all Flux infrastructure updates together",
-      "matchPaths": ["infrastructure/**"],
+      "matchFileNames": [
+        "infrastructure/**"
+      ],
       "groupName": "infrastructure dependencies",
       "groupSlug": "infrastructure"
     },
     {
       "description": "Group all app updates together",
-      "matchPaths": ["apps/**"],
+      "matchFileNames": [
+        "apps/**"
+      ],
       "groupName": "app dependencies",
       "groupSlug": "apps"
     },
     {
       "description": "Auto-merge Renovate's own patch updates",
-      "matchPackageNames": ["ghcr.io/renovatebot/renovate"],
-      "matchUpdateTypes": ["patch"],
+      "matchPackageNames": [
+        "ghcr.io/renovatebot/renovate"
+      ],
+      "matchUpdateTypes": [
+        "patch"
+      ],
       "automerge": true
     },
     {
       "description": "Pin digests for all container images",
-      "matchManagers": ["kubernetes"],
+      "matchManagers": [
+        "kubernetes"
+      ],
       "pinDigests": false
     }
   ],
-  "labels": ["renovate", "dependencies"],
+  "labels": [
+    "renovate",
+    "dependencies"
+  ],
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2
 }
