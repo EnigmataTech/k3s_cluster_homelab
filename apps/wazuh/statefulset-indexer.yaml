@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: wazuh-indexer
+  namespace: wazuh
+spec:
+  serviceName: wazuh-indexer
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wazuh-indexer
+  template:
+    metadata:
+      labels:
+        app: wazuh-indexer
+    spec:
+      initContainers:
+        # OpenSearch requires vm.max_map_count >= 262144
+        - name: sysctl
+          image: busybox:1.36
+          command: ["sysctl", "-w", "vm.max_map_count=262144"]
+          securityContext:
+            privileged: true
+      containers:
+        - name: wazuh-indexer
+          image: wazuh/wazuh-indexer:4.14.0
+          env:
+            - name: OPENSEARCH_JAVA_OPTS
+              value: "-Xms1g -Xmx1g"
+            - name: OPENSEARCH_INITIAL_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: indexer-admin-password
+          ports:
+            - containerPort: 9200
+              name: https
+            - containerPort: 9300
+              name: transport
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1.2Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          volumeMounts:
+            - name: wazuh-indexer-data
+              mountPath: /var/lib/wazuh-indexer
+            - name: indexer-certs
+              mountPath: /usr/share/wazuh-indexer/config/certs
+              readOnly: true
+            - name: indexer-config
+              mountPath: /usr/share/wazuh-indexer/config/opensearch.yml
+              subPath: opensearch.yml
+              readOnly: true
+            - name: internal-users
+              mountPath: /usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml
+              subPath: internal_users.yml
+              readOnly: true
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - |
+                  curl -sk -u "admin:oZL@6l6N!3y\$yM" \
+                    https://localhost:9200/_cluster/health | grep -q '"status":"green"\|"status":"yellow"'
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 10
+          livenessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - |
+                  curl -sk -u "admin:oZL@6l6N!3y\$yM" \
+                    https://localhost:9200/ | grep -q "wazuh-cluster"
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          securityContext:
+            capabilities:
+              add:
+                - SYS_CHROOT
+      volumes:
+        - name: indexer-certs
+          projected:
+            sources:
+              - secret:
+                  name: wazuh-indexer-cert
+                  items:
+                    - key: ca.crt
+                      path: root-ca.pem
+                    - key: tls.crt
+                      path: wazuh-indexer.pem
+                    - key: tls.key
+                      path: wazuh-indexer.key
+              - secret:
+                  name: wazuh-admin-cert
+                  items:
+                    - key: tls.crt
+                      path: admin.pem
+                    - key: tls.key
+                      path: admin-key.pem
+        - name: indexer-config
+          configMap:
+            name: wazuh-indexer-config
+            items:
+              - key: opensearch.yml
+                path: opensearch.yml
+        - name: internal-users
+          configMap:
+            name: wazuh-indexer-config
+            items:
+              - key: internal_users.yml
+                path: internal_users.yml
+  volumeClaimTemplates:
+    - metadata:
+        name: wazuh-indexer-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 20Gi

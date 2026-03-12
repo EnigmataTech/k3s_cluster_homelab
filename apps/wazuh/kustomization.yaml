@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - secret.yaml
+  - certificates.yaml
+  - configmap-indexer.yaml
+  - configmap-manager.yaml
+  - configmap-dashboard.yaml
+  - statefulset-indexer.yaml
+  - statefulset-manager.yaml
+  - deployment-dashboard.yaml
+  - service-agents.yaml
+  - service-indexer.yaml
+  - service-manager.yaml
+  - service-dashboard.yaml
+  - ingress-dashboard.yaml

@@ -5,3 +5,5 @@ resources:
   - forgejo
   - deriv-trading-bot
   - renovate
+  - ntfy
+  - wazuh

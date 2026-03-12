@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wazuh-dashboard
+  namespace: wazuh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wazuh-dashboard
+  template:
+    metadata:
+      labels:
+        app: wazuh-dashboard
+    spec:
+      initContainers:
+        # Wait for both indexer and manager before starting dashboard
+        - name: wait-for-indexer
+          image: curlimages/curl:8.6.0
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sk -u "admin:oZL@6l6N!3y\$yM" \
+                https://wazuh-indexer:9200/_cluster/health \
+                | grep -q '"status":"green"\|"status":"yellow"'; do
+                echo "Waiting for Wazuh indexer..."
+                sleep 10
+              done
+              echo "Indexer ready."
+        - name: wait-for-manager
+          image: curlimages/curl:8.6.0
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sk -o /dev/null -w "%{http_code}" \
+                https://wazuh-manager:55000/ | grep -q "200\|401"; do
+                echo "Waiting for Wazuh manager API..."
+                sleep 10
+              done
+              echo "Manager ready."
+      containers:
+        - name: wazuh-dashboard
+          image: wazuh/wazuh-dashboard:4.14.0
+          env:
+            - name: INDEXER_USERNAME
+              value: "admin"
+            - name: INDEXER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: indexer-admin-password
+            - name: WAZUH_API_URL
+              value: "https://wazuh-manager"
+            - name: DASHBOARD_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: dashboard-username
+            - name: DASHBOARD_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: dashboard-password
+            - name: API_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: api-username
+            - name: API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: api-password
+          ports:
+            - containerPort: 5601
+              name: http
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          volumeMounts:
+            - name: dashboard-certs
+              mountPath: /usr/share/wazuh-dashboard/certs
+              readOnly: true
+            - name: dashboard-config
+              mountPath: /usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
+              subPath: opensearch_dashboards.yml
+              readOnly: true
+            - name: wazuh-yml
+              mountPath: /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
+              subPath: wazuh.yml
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /app/wz-home
+              port: 5601
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 10
+      volumes:
+        - name: dashboard-certs
+          projected:
+            sources:
+              - secret:
+                  name: wazuh-dashboard-cert
+                  items:
+                    - key: ca.crt
+                      path: root-ca.pem
+                    - key: tls.crt
+                      path: wazuh-dashboard.pem
+                    - key: tls.key
+                      path: wazuh-dashboard-key.pem
+        - name: dashboard-config
+          configMap:
+            name: wazuh-dashboard-config
+            items:
+              - key: opensearch_dashboards.yml
+                path: opensearch_dashboards.yml
+        - name: wazuh-yml
+          configMap:
+            name: wazuh-dashboard-config
+            items:
+              - key: wazuh.yml
+                path: wazuh.yml
