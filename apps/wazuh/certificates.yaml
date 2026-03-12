@@ -1,0 +1,136 @@
+# cert-manager resources for Wazuh internal mTLS
+# Requires cert-manager to be installed (already deployed in cert-manager namespace)
+#
+# ORDERING NOTE: cert-manager handles dependency retries automatically.
+# The wazuh-ca-issuer will retry until wazuh-root-ca Secret exists.
+# However for the first apply, apply this file alone first and wait ~10s:
+#   kubectl apply -f certificates.yaml
+#   kubectl wait --for=condition=Ready certificate/wazuh-root-ca -n wazuh --timeout=60s
+#   kubectl apply -k .   # then apply the rest
+# Or just apply everything — cert-manager will reconcile within ~30 seconds.
+---
+# Step 1: Self-signed Issuer to bootstrap root CA
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: wazuh-selfsigned
+  namespace: wazuh
+spec:
+  selfSigned: {}
+---
+# Step 2: Root CA certificate (issued by self-signed → creates wazuh-root-ca Secret)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wazuh-root-ca
+  namespace: wazuh
+spec:
+  isCA: true
+  commonName: wazuh-root-ca
+  subject:
+    organizations:
+      - Wazuh
+  secretName: wazuh-root-ca
+  privateKey:
+    algorithm: RSA
+    size: 2048
+  duration: 87600h  # 10 years
+  issuerRef:
+    name: wazuh-selfsigned
+    kind: Issuer
+---
+# Step 3: CA Issuer referencing the root CA Secret
+# cert-manager will retry this until wazuh-root-ca Secret is ready (~5-10s)
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: wazuh-ca-issuer
+  namespace: wazuh
+spec:
+  ca:
+    secretName: wazuh-root-ca
+---
+# Indexer certificate (CN must match plugins.security.nodes_dn in opensearch.yml)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wazuh-indexer-cert
+  namespace: wazuh
+spec:
+  commonName: wazuh-indexer
+  subject:
+    organizations:
+      - Wazuh
+  dnsNames:
+    - wazuh-indexer
+    - wazuh-indexer.wazuh.svc.cluster.local
+    - localhost
+  ipAddresses:
+    - 127.0.0.1
+  secretName: wazuh-indexer-cert
+  duration: 8760h  # 1 year
+  renewBefore: 720h  # 30 days
+  issuerRef:
+    name: wazuh-ca-issuer
+    kind: Issuer
+---
+# Manager (filebeat) certificate — used for manager → indexer connection
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wazuh-manager-cert
+  namespace: wazuh
+spec:
+  commonName: wazuh-manager
+  subject:
+    organizations:
+      - Wazuh
+  dnsNames:
+    - wazuh-manager
+    - wazuh-manager.wazuh.svc.cluster.local
+  secretName: wazuh-manager-cert
+  duration: 8760h
+  renewBefore: 720h
+  issuerRef:
+    name: wazuh-ca-issuer
+    kind: Issuer
+---
+# Dashboard certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wazuh-dashboard-cert
+  namespace: wazuh
+spec:
+  commonName: wazuh-dashboard
+  subject:
+    organizations:
+      - Wazuh
+  dnsNames:
+    - wazuh-dashboard
+    - wazuh-dashboard.wazuh.svc.cluster.local
+  secretName: wazuh-dashboard-cert
+  duration: 8760h
+  renewBefore: 720h
+  issuerRef:
+    name: wazuh-ca-issuer
+    kind: Issuer
+---
+# Admin certificate — for OpenSearch security plugin initialization
+# CN must match plugins.security.authcz.admin_dn in opensearch.yml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wazuh-admin-cert
+  namespace: wazuh
+spec:
+  commonName: admin
+  subject:
+    organizations:
+      - Wazuh
+  secretName: wazuh-admin-cert
+  duration: 8760h
+  renewBefore: 720h
+  issuerRef:
+    name: wazuh-ca-issuer
+    kind: Issuer

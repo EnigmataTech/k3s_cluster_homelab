@@ -1,0 +1,738 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wazuh-manager-config
+  namespace: wazuh
+data:
+  ossec.conf: |
+    <ossec_config>
+      <global>
+        <jsonout_output>yes</jsonout_output>
+        <alerts_log>yes</alerts_log>
+        <logall>no</logall>
+        <logall_json>no</logall_json>
+        <email_notification>no</email_notification>
+        <agents_disconnection_time>10m</agents_disconnection_time>
+        <agents_disconnection_alert_time>0</agents_disconnection_alert_time>
+        <white_list>127.0.0.1</white_list>
+        <white_list>^localhost.localdomain$</white_list>
+      </global>
+
+      <alerts>
+        <log_alert_level>3</log_alert_level>
+        <email_alert_level>12</email_alert_level>
+      </alerts>
+
+      <logging>
+        <log_format>plain</log_format>
+      </logging>
+
+      <remote>
+        <connection>secure</connection>
+        <port>1514</port>
+        <protocol>tcp</protocol>
+        <queue_size>131072</queue_size>
+      </remote>
+
+      <rootcheck>
+        <disabled>no</disabled>
+        <check_files>yes</check_files>
+        <check_trojans>yes</check_trojans>
+        <check_dev>yes</check_dev>
+        <check_sys>yes</check_sys>
+        <check_pids>yes</check_pids>
+        <check_ports>yes</check_ports>
+        <check_if>yes</check_if>
+        <frequency>43200</frequency>
+        <rootkit_files>etc/rootcheck/rootkit_files.txt</rootkit_files>
+        <rootkit_trojans>etc/rootcheck/rootkit_trojans.txt</rootkit_trojans>
+        <skip_nfs>yes</skip_nfs>
+      </rootcheck>
+
+      <wodle name="cis-cat">
+        <disabled>yes</disabled>
+      </wodle>
+
+      <wodle name="osquery">
+        <disabled>yes</disabled>
+      </wodle>
+
+      <wodle name="syscollector">
+        <disabled>no</disabled>
+        <interval>1h</interval>
+        <scan_on_start>yes</scan_on_start>
+        <hardware>yes</hardware>
+        <os>yes</os>
+        <network>yes</network>
+        <packages>yes</packages>
+        <ports all="yes">yes</ports>
+        <processes>yes</processes>
+        <synchronization>
+          <max_eps>10</max_eps>
+        </synchronization>
+      </wodle>
+
+      <sca>
+        <enabled>yes</enabled>
+        <scan_on_start>yes</scan_on_start>
+        <interval>12h</interval>
+        <skip_nfs>yes</skip_nfs>
+      </sca>
+
+      <vulnerability-detection>
+        <enabled>yes</enabled>
+        <index-status>yes</index-status>
+        <feed-update-interval>6h</feed-update-interval>
+      </vulnerability-detection>
+
+      <indexer>
+        <enabled>yes</enabled>
+        <hosts>
+          <!-- k8s service DNS — wazuh-indexer service in wazuh namespace -->
+          <host>https://wazuh-indexer:9200</host>
+        </hosts>
+        <ssl>
+          <certificate_authorities>
+            <ca>/etc/ssl/root-ca.pem</ca>
+          </certificate_authorities>
+          <certificate>/etc/ssl/filebeat.pem</certificate>
+          <key>/etc/ssl/filebeat.key</key>
+        </ssl>
+      </indexer>
+
+      <syscheck>
+        <disabled>no</disabled>
+        <frequency>43200</frequency>
+        <scan_on_start>yes</scan_on_start>
+        <alert_new_files>yes</alert_new_files>
+        <auto_ignore frequency="10" timeframe="3600">no</auto_ignore>
+        <directories>/etc,/usr/bin,/usr/sbin</directories>
+        <directories>/bin,/sbin,/boot</directories>
+        <ignore>/etc/mtab</ignore>
+        <ignore>/etc/hosts.deny</ignore>
+        <ignore>/etc/mail/statistics</ignore>
+        <ignore>/etc/random-seed</ignore>
+        <ignore>/etc/adjtime</ignore>
+        <ignore>/etc/httpd/logs</ignore>
+        <ignore>/etc/utmpx</ignore>
+        <ignore>/etc/wtmpx</ignore>
+        <ignore>/etc/cups/certs</ignore>
+        <ignore>/etc/dumpdates</ignore>
+        <ignore>/etc/svc/volatile</ignore>
+        <ignore type="sregex">.log$|.swp$</ignore>
+        <nodiff>/etc/ssl/private.key</nodiff>
+        <skip_nfs>yes</skip_nfs>
+        <skip_dev>yes</skip_dev>
+        <skip_proc>yes</skip_proc>
+        <skip_sys>yes</skip_sys>
+        <process_priority>10</process_priority>
+        <max_eps>100</max_eps>
+        <synchronization>
+          <enabled>yes</enabled>
+          <interval>5m</interval>
+          <max_interval>1h</max_interval>
+          <max_eps>10</max_eps>
+        </synchronization>
+      </syscheck>
+
+      <command>
+        <name>disable-account</name>
+        <executable>disable-account</executable>
+        <timeout_allowed>yes</timeout_allowed>
+      </command>
+      <command>
+        <name>restart-wazuh</name>
+        <executable>restart-wazuh</executable>
+      </command>
+      <command>
+        <name>firewall-drop</name>
+        <executable>firewall-drop</executable>
+        <timeout_allowed>yes</timeout_allowed>
+      </command>
+      <command>
+        <name>host-deny</name>
+        <executable>host-deny</executable>
+        <timeout_allowed>yes</timeout_allowed>
+      </command>
+      <command>
+        <name>route-null</name>
+        <executable>route-null</executable>
+        <timeout_allowed>yes</timeout_allowed>
+      </command>
+      <command>
+        <name>win_route-null</name>
+        <executable>route-null.exe</executable>
+        <timeout_allowed>yes</timeout_allowed>
+      </command>
+      <command>
+        <name>netsh</name>
+        <executable>netsh.exe</executable>
+        <timeout_allowed>yes</timeout_allowed>
+      </command>
+
+      <localfile>
+        <log_format>command</log_format>
+        <command>df -P</command>
+        <frequency>360</frequency>
+      </localfile>
+
+      <localfile>
+        <log_format>full_command</log_format>
+        <command><![CDATA[netstat -tulpn | sed 's/\([[:alnum:]]\+\)\ \+[[:digit:]]\+\ \+[[:digit:]]\+\ \+\(.*\):\([[:digit:]]*\)\ \+\([0-9\.\:\*]\+\).\+\ \([[:digit:]]*\/[[:alnum:]\-]*\).*/\1 \2 == \3 == \4 \5/' | sort -k 4 -g | sed 's/ == \(.*\) ==/:\1/' | sed 1,2d]]></command>
+        <alias>netstat listening ports</alias>
+        <frequency>360</frequency>
+      </localfile>
+
+      <localfile>
+        <log_format>full_command</log_format>
+        <command>last -n 20</command>
+        <frequency>360</frequency>
+      </localfile>
+
+      <ruleset>
+        <decoder_dir>ruleset/decoders</decoder_dir>
+        <rule_dir>ruleset/rules</rule_dir>
+        <rule_exclude>0215-policy_rules.xml</rule_exclude>
+        <list>etc/lists/audit-keys</list>
+        <list>etc/lists/amazon/aws-eventnames</list>
+        <list>etc/lists/security-eventchannel</list>
+        <list>etc/lists/malicious-ioc/malicious-ip</list>
+        <list>etc/lists/malicious-ioc/malicious-domains</list>
+        <list>etc/lists/malicious-ioc/malware-hashes</list>
+        <decoder_dir>etc/decoders</decoder_dir>
+        <rule_dir>etc/rules</rule_dir>
+      </ruleset>
+
+      <rule_test>
+        <enabled>yes</enabled>
+        <threads>1</threads>
+        <max_sessions>64</max_sessions>
+        <session_timeout>15m</session_timeout>
+      </rule_test>
+
+      <auth>
+        <disabled>no</disabled>
+        <port>1515</port>
+        <use_source_ip>no</use_source_ip>
+        <purge>yes</purge>
+        <use_password>no</use_password>
+        <ciphers>HIGH:!ADH:!EXP:!MD5:!RC4:!3DES:!CAMELLIA:@STRENGTH</ciphers>
+        <ssl_verify_host>no</ssl_verify_host>
+        <ssl_manager_cert>etc/sslmanager.cert</ssl_manager_cert>
+        <ssl_manager_key>etc/sslmanager.key</ssl_manager_key>
+        <ssl_auto_negotiate>no</ssl_auto_negotiate>
+      </auth>
+
+      <cluster>
+        <name>wazuh</name>
+        <node_name>node01</node_name>
+        <node_type>master</node_type>
+        <key>aa093264ef885029653eea20dfcf51ae</key>
+        <port>1516</port>
+        <bind_addr>0.0.0.0</bind_addr>
+        <nodes>
+          <node>wazuh-manager</node>
+        </nodes>
+        <hidden>no</hidden>
+        <disabled>yes</disabled>
+      </cluster>
+
+      <!-- ntfy integration — alerts level ≥7 forwarded to push notifications -->
+      <integration>
+        <name>custom-ntfy</name>
+        <hook_url>ntfy</hook_url>
+        <level>7</level>
+        <alert_format>json</alert_format>
+      </integration>
+
+    </ossec_config>
+
+    <ossec_config>
+      <localfile>
+        <log_format>syslog</log_format>
+        <location>/var/ossec/logs/active-responses.log</location>
+      </localfile>
+    </ossec_config>
+
+  local_rules.xml: |
+    <!-- Custom Wazuh Rules for Home Lab Security Monitoring -->
+    <!-- Created: 2025-11-27 -->
+    <group name="local,">
+
+    <!-- SSH Auth -->
+      <rule id="100100" level="5">
+        <if_sid>5710</if_sid>
+        <description>SSH: Failed login attempt with non-existent user</description>
+        <group>authentication_failed,reconnaissance,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+      </rule>
+      <rule id="100101" level="6">
+        <if_sid>5716</if_sid>
+        <description>SSH: Authentication failed - possible brute force</description>
+        <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+      </rule>
+      <rule id="100102" level="8" frequency="5" timeframe="300">
+        <if_matched_sid>100101</if_matched_sid>
+        <same_source_ip />
+        <description>SSH: Multiple authentication failures from same source IP</description>
+        <group>authentication_failures,brute_force_attack,pci_dss_11.4,</group>
+      </rule>
+      <rule id="100103" level="10" frequency="3" timeframe="300">
+        <if_matched_sid>100101</if_matched_sid>
+        <different_srcip />
+        <description>SSH: Distributed brute force attack detected (multiple source IPs)</description>
+        <group>authentication_failures,distributed_attack,pci_dss_11.4,</group>
+      </rule>
+      <rule id="100104" level="3">
+        <if_sid>5715</if_sid>
+        <description>SSH: Successful authentication</description>
+        <group>authentication_success,pci_dss_10.2.5,</group>
+      </rule>
+      <rule id="100105" level="7">
+        <if_sid>5715</if_sid>
+        <hostname>StingerVPS</hostname>
+        <time>22:00-06:00</time>
+        <description>SSH: Successful login to VPS during off-hours (potential compromise)</description>
+        <group>authentication_success,suspicious_time,pci_dss_10.2.5,</group>
+      </rule>
+      <rule id="100106" level="7">
+        <if_sid>5716</if_sid>
+        <user>root</user>
+        <description>SSH: Failed root login attempt (should be disabled)</description>
+        <group>authentication_failed,invalid_login,policy_violation,</group>
+      </rule>
+      <rule id="100107" level="9">
+        <if_sid>5715</if_sid>
+        <user>root</user>
+        <description>SSH: Successful root login (security policy violation)</description>
+        <group>authentication_success,policy_violation,pci_dss_10.2.5,</group>
+      </rule>
+      <rule id="100110" level="3">
+        <decoded_as>sudo</decoded_as>
+        <match>session opened for user root</match>
+        <description>Sudo: User escalated privileges to root</description>
+        <group>privilege_escalation,pci_dss_10.2.5,</group>
+      </rule>
+      <rule id="100111" level="8">
+        <if_sid>100110</if_sid>
+        <hostname>PVE-Proxmox|StingerVPS</hostname>
+        <description>Sudo: Root access on critical system (Proxmox/VPS)</description>
+        <group>privilege_escalation,critical_system,pci_dss_10.2.5,</group>
+      </rule>
+      <rule id="100112" level="7" frequency="3" timeframe="300">
+        <if_matched_sid>100110</if_matched_sid>
+        <same_user />
+        <description>Sudo: Multiple privilege escalations by same user</description>
+        <group>privilege_escalation,suspicious_behavior,</group>
+      </rule>
+      <rule id="100113" level="5">
+        <decoded_as>sudo</decoded_as>
+        <match>authentication failure</match>
+        <description>Sudo: Failed privilege escalation attempt</description>
+        <group>authentication_failed,privilege_escalation_failed,</group>
+      </rule>
+      <rule id="100114" level="9" frequency="3" timeframe="120">
+        <if_matched_sid>100113</if_matched_sid>
+        <same_user />
+        <description>Sudo: Multiple failed privilege escalation attempts</description>
+        <group>authentication_failures,privilege_escalation_attack,</group>
+      </rule>
+      <rule id="100120" level="5">
+        <match>pam_unix(su:auth): authentication failure</match>
+        <description>PAM: Failed su authentication attempt</description>
+        <group>authentication_failed,pam,</group>
+      </rule>
+      <rule id="100121" level="8" frequency="3" timeframe="300">
+        <if_matched_sid>100120</if_matched_sid>
+        <description>PAM: Multiple failed su attempts - possible privilege escalation attack</description>
+        <group>authentication_failures,privilege_escalation_attack,</group>
+      </rule>
+
+    <!-- FIM -->
+      <rule id="100200" level="7">
+        <if_sid>550,554</if_sid>
+        <match>/etc/passwd|/etc/shadow|/etc/group|/etc/sudoers</match>
+        <description>FIM: Critical authentication file modified</description>
+        <group>file_integrity,critical_file,authentication_config,</group>
+      </rule>
+      <rule id="100201" level="8">
+        <if_sid>550,554</if_sid>
+        <match>/etc/ssh/sshd_config</match>
+        <description>FIM: SSH configuration file modified</description>
+        <group>file_integrity,ssh_config,security_config,</group>
+      </rule>
+      <rule id="100202" level="7">
+        <if_sid>550,554</if_sid>
+        <match>/etc/pam.d/</match>
+        <description>FIM: PAM configuration changed</description>
+        <group>file_integrity,pam_config,authentication_config,</group>
+      </rule>
+      <rule id="100203" level="6">
+        <if_sid>554</if_sid>
+        <match>/usr/bin/|/usr/sbin/|/bin/|/sbin/</match>
+        <description>FIM: New executable added to system binary directory</description>
+        <group>file_integrity,new_file,potential_persistence,</group>
+      </rule>
+      <rule id="100204" level="7">
+        <if_sid>554</if_sid>
+        <match>/etc/cron|/etc/systemd/system/</match>
+        <description>FIM: New file in scheduled task directory (potential persistence)</description>
+        <group>file_integrity,new_file,persistence_mechanism,</group>
+      </rule>
+      <rule id="100205" level="5">
+        <if_sid>550,554</if_sid>
+        <match>/var/www/|/usr/share/nginx/html/</match>
+        <description>FIM: Web directory file changed (potential web shell)</description>
+        <group>file_integrity,web_directory,potential_webshell,</group>
+      </rule>
+      <rule id="100206" level="6">
+        <if_sid>550,554</if_sid>
+        <match>/etc/docker/daemon.json|docker-compose.yml</match>
+        <description>FIM: Docker configuration file modified</description>
+        <group>file_integrity,docker_config,container_security,</group>
+      </rule>
+      <rule id="100207" level="7">
+        <if_sid>550,554</if_sid>
+        <hostname>PVE-Proxmox</hostname>
+        <match>/etc/pve/</match>
+        <description>FIM: Proxmox VE configuration modified</description>
+        <group>file_integrity,proxmox_config,virtualization_security,</group>
+      </rule>
+      <rule id="100208" level="9">
+        <if_sid>554</if_sid>
+        <match>/lib/modules/|/usr/lib/modules/</match>
+        <description>FIM: New kernel module detected (rootkit indicator)</description>
+        <group>file_integrity,kernel_module,rootkit_indicator,</group>
+      </rule>
+      <rule id="100209" level="8">
+        <if_sid>550,554</if_sid>
+        <match>/etc/ld.so.preload|/lib/x86_64-linux-gnu/|/usr/lib/x86_64-linux-gnu/</match>
+        <description>FIM: Shared library or LD_PRELOAD modified (rootkit technique)</description>
+        <group>file_integrity,shared_library,rootkit_technique,</group>
+      </rule>
+
+    <!-- Docker -->
+      <rule id="100300" level="5">
+        <if_sid>86003</if_sid>
+        <description>Docker: Error event detected</description>
+        <group>docker,docker_error,</group>
+      </rule>
+      <rule id="100301" level="7">
+        <if_sid>86003</if_sid>
+        <match>permission denied|access denied|unauthorized</match>
+        <description>Docker: Authorization error detected</description>
+        <group>docker,docker_auth_error,access_control,</group>
+      </rule>
+      <rule id="100302" level="8">
+        <decoded_as>docker</decoded_as>
+        <match>--privileged|--cap-add</match>
+        <description>Docker: Container started with elevated privileges</description>
+        <group>docker,container_privilege,security_risk,</group>
+      </rule>
+      <rule id="100303" level="6">
+        <decoded_as>docker</decoded_as>
+        <match>docker exec</match>
+        <description>Docker: Command executed in running container</description>
+        <group>docker,container_exec,</group>
+      </rule>
+      <rule id="100304" level="8" frequency="5" timeframe="300">
+        <if_matched_sid>100303</if_matched_sid>
+        <same_source_ip />
+        <description>Docker: Multiple exec commands in containers (potential intrusion)</description>
+        <group>docker,suspicious_activity,potential_intrusion,</group>
+      </rule>
+      <rule id="100305" level="10">
+        <decoded_as>docker</decoded_as>
+        <match>release_agent|proc/self/exe|mounted host filesystem</match>
+        <description>Docker: Potential container escape attempt detected</description>
+        <group>docker,container_escape,critical_threat,</group>
+      </rule>
+      <rule id="100306" level="6">
+        <decoded_as>docker</decoded_as>
+        <match>-v /:|--volume /:|--mount.*type=bind,source=/,</match>
+        <description>Docker: Container mounted with host root filesystem</description>
+        <group>docker,dangerous_mount,security_risk,</group>
+      </rule>
+      <rule id="100307" level="6">
+        <decoded_as>docker</decoded_as>
+        <match>--network host|--net host</match>
+        <description>Docker: Container using host network mode</description>
+        <group>docker,network_mode_host,security_risk,</group>
+      </rule>
+      <rule id="100308" level="4">
+        <decoded_as>docker</decoded_as>
+        <match>docker pull|pulling from</match>
+        <description>Docker: Container image being pulled</description>
+        <group>docker,image_pull,</group>
+      </rule>
+      <rule id="100309" level="4">
+        <decoded_as>docker</decoded_as>
+        <match>container died|container kill|container stop</match>
+        <description>Docker: Container stopped or killed</description>
+        <group>docker,container_stopped,</group>
+      </rule>
+      <rule id="100310" level="7" frequency="3" timeframe="600">
+        <if_matched_sid>100309</if_matched_sid>
+        <same_field>container_id</same_field>
+        <description>Docker: Container repeatedly crashing</description>
+        <group>docker,container_crash_loop,availability,</group>
+      </rule>
+
+    <!-- System Health -->
+      <rule id="100400" level="5">
+        <match>No space left on device|disk full|filesystem full</match>
+        <description>System: Disk space critically low</description>
+        <group>system_health,disk_space,availability,</group>
+      </rule>
+      <rule id="100401" level="7">
+        <if_sid>100400</if_sid>
+        <hostname>PVE-Proxmox</hostname>
+        <description>System: Proxmox host disk space critically low</description>
+        <group>system_health,disk_space,critical_system,</group>
+      </rule>
+      <rule id="100402" level="7">
+        <match>Out of memory|OOM killer|oom-kill</match>
+        <description>System: Out of Memory event - process killed</description>
+        <group>system_health,memory,oom,</group>
+      </rule>
+      <rule id="100403" level="9">
+        <if_sid>100402</if_sid>
+        <hostname>PVE-Proxmox</hostname>
+        <description>System: Proxmox host OOM event</description>
+        <group>system_health,memory,critical_system,</group>
+      </rule>
+      <rule id="100404" level="6">
+        <match>systemd.*failed|service.*failed|Failed to start</match>
+        <description>System: Service failed to start</description>
+        <group>system_health,service_failure,</group>
+      </rule>
+      <rule id="100405" level="8">
+        <if_sid>100404</if_sid>
+        <match>docker|containerd|ssh|wazuh-agent</match>
+        <description>System: Critical service failed (Docker/SSH/Wazuh)</description>
+        <group>system_health,critical_service_failure,</group>
+      </rule>
+      <rule id="100406" level="12">
+        <match>kernel panic|hardware error|MCE|machine check exception</match>
+        <description>System: Critical hardware or kernel error detected</description>
+        <group>system_health,hardware_error,critical,</group>
+      </rule>
+      <rule id="100407" level="5">
+        <match>CPU.*throttled|thermal.*throttling</match>
+        <description>System: CPU thermal throttling detected</description>
+        <group>system_health,thermal,performance,</group>
+      </rule>
+      <rule id="100409" level="10">
+        <match>filesystem error|ext4.*error|corruption|superblock</match>
+        <description>System: Filesystem corruption detected</description>
+        <group>system_health,filesystem_corruption,data_integrity,</group>
+      </rule>
+      <rule id="100410" level="7">
+        <match>SMART.*fail|disk.*fail|bad sector|reallocated sector</match>
+        <description>System: Disk SMART warning - drive failure imminent</description>
+        <group>system_health,disk_health,hardware_failure,</group>
+      </rule>
+
+    <!-- Network -->
+      <rule id="100500" level="5">
+        <match>SYN flood|port scan|scan attempt</match>
+        <description>Network: Port scanning activity detected</description>
+        <group>network,reconnaissance,port_scan,</group>
+      </rule>
+      <rule id="100501" level="7" frequency="10" timeframe="120">
+        <if_matched_sid>100500</if_matched_sid>
+        <same_source_ip />
+        <description>Network: Intensive port scan from single source</description>
+        <group>network,reconnaissance,active_scan,</group>
+      </rule>
+      <rule id="100502" level="6">
+        <hostname>StingerVPS</hostname>
+        <match>connection.*refused|connection.*reset|connection timeout</match>
+        <description>Network: VPS experiencing connection issues</description>
+        <group>network,connection_issues,availability,</group>
+      </rule>
+      <rule id="100503" level="8" frequency="20" timeframe="60">
+        <if_matched_sid>100502</if_matched_sid>
+        <description>Network: High volume of connection failures on VPS (DDoS likely)</description>
+        <group>network,ddos_attack,availability,</group>
+      </rule>
+      <rule id="100504" level="4">
+        <match>iptables.*DROP|firewall.*blocked|UFW BLOCK</match>
+        <description>Network: Firewall blocked connection attempt</description>
+        <group>network,firewall,blocked_connection,</group>
+      </rule>
+      <rule id="100505" level="6" frequency="15" timeframe="300">
+        <if_matched_sid>100504</if_matched_sid>
+        <same_source_ip />
+        <description>Network: Multiple firewall blocks from same IP</description>
+        <group>network,reconnaissance,firewall,</group>
+      </rule>
+      <rule id="100506" level="5">
+        <match>DNS.*tunneling|excessive DNS queries|DNS amplification</match>
+        <description>Network: Suspicious DNS activity detected</description>
+        <group>network,dns,suspicious_activity,</group>
+      </rule>
+
+    <!-- Proxmox -->
+      <rule id="100600" level="4">
+        <hostname>PVE-Proxmox</hostname>
+        <match>VM.*started|CT.*started</match>
+        <description>Proxmox: VM or container started</description>
+        <group>proxmox,vm_state,</group>
+      </rule>
+      <rule id="100601" level="5">
+        <hostname>PVE-Proxmox</hostname>
+        <match>VM.*stopped|CT.*stopped</match>
+        <description>Proxmox: VM or container stopped</description>
+        <group>proxmox,vm_state,</group>
+      </rule>
+      <rule id="100602" level="7">
+        <hostname>PVE-Proxmox</hostname>
+        <match>VM.*failed|CT.*failed|migration.*failed</match>
+        <description>Proxmox: VM/container operation failed</description>
+        <group>proxmox,vm_failure,</group>
+      </rule>
+      <rule id="100603" level="3">
+        <hostname>PVE-Proxmox</hostname>
+        <match>backup.*finished|vzdump.*finished</match>
+        <description>Proxmox: Backup completed successfully</description>
+        <group>proxmox,backup,success,</group>
+      </rule>
+      <rule id="100604" level="8">
+        <hostname>PVE-Proxmox</hostname>
+        <match>backup.*failed|vzdump.*error</match>
+        <description>Proxmox: Backup failed</description>
+        <group>proxmox,backup,failure,</group>
+      </rule>
+      <rule id="100605" level="8">
+        <hostname>PVE-Proxmox</hostname>
+        <match>cluster.*lost quorum|fence.*failed|HA.*error</match>
+        <description>Proxmox: Cluster or HA issue detected</description>
+        <group>proxmox,cluster,high_availability,</group>
+      </rule>
+      <rule id="100606" level="7">
+        <hostname>PVE-Proxmox</hostname>
+        <match>storage.*unavailable|storage.*error|LVM.*error</match>
+        <description>Proxmox: Storage subsystem error</description>
+        <group>proxmox,storage,data_integrity,</group>
+      </rule>
+
+    <!-- Suspicious Commands -->
+      <rule id="100700" level="5">
+        <match>nmap|masscan|zmap|unicornscan</match>
+        <description>Command: Network scanning tool executed</description>
+        <group>command_execution,reconnaissance,scanning_tool,</group>
+      </rule>
+      <rule id="100701" level="6">
+        <match>nc -l|netcat -l|socat.*LISTEN</match>
+        <description>Command: Network listener opened (potential reverse shell)</description>
+        <group>command_execution,network_listener,backdoor,</group>
+      </rule>
+      <rule id="100702" level="9">
+        <match>mimikatz|pwdump|gsecdump|wce.exe</match>
+        <description>Command: Credential dumping tool detected</description>
+        <group>command_execution,credential_theft,attack_tool,</group>
+      </rule>
+      <rule id="100703" level="7">
+        <match>crontab -e|systemctl.*enable|rc.local</match>
+        <description>Command: Persistence mechanism modification</description>
+        <group>command_execution,persistence,</group>
+      </rule>
+      <rule id="100704" level="6">
+        <match>wget.*\||curl.*\||wget.*sh|curl.*sh</match>
+        <description>Command: Piped download and execution</description>
+        <group>command_execution,suspicious_download,code_execution,</group>
+      </rule>
+      <rule id="100705" level="7">
+        <match>base64 -d|echo.*base64.*exec|eval.*base64</match>
+        <description>Command: Base64 encoded command execution (obfuscation)</description>
+        <group>command_execution,obfuscation,evasion,</group>
+      </rule>
+      <rule id="100706" level="4">
+        <match>cat /etc/passwd|cat /etc/shadow|getent passwd</match>
+        <description>Command: User enumeration activity</description>
+        <group>command_execution,reconnaissance,user_enumeration,</group>
+      </rule>
+      <rule id="100707" level="8">
+        <match>gdb -p|ptrace|/proc/.*mem</match>
+        <description>Command: Process debugging/injection attempt</description>
+        <group>command_execution,process_injection,privilege_escalation,</group>
+      </rule>
+      <rule id="100708" level="8">
+        <match>insmod|modprobe|kmod</match>
+        <description>Command: Kernel module loaded (potential rootkit)</description>
+        <group>command_execution,kernel_module,rootkit,</group>
+      </rule>
+      <rule id="100709" level="7">
+        <match>history -c|unset HISTFILE|export HISTFILESIZE=0</match>
+        <description>Command: Command history clearing (anti-forensics)</description>
+        <group>command_execution,anti_forensics,evasion,</group>
+      </rule>
+
+    </group>
+
+  custom-ntfy: |
+    #!/bin/bash
+    # Wazuh to ntfy Integration Script
+    # Sends alerts level >=7 to ntfy topics based on severity
+
+    NTFY_URL="http://ntfy.ntfy.svc.cluster.local"
+    NTFY_USER="wazuh-integration"
+    NTFY_PASS="REDACTED_NTFY_PW"
+
+    INPUT_JSON=$(cat "$1")
+
+    if [ -z "$INPUT_JSON" ] || [ "$INPUT_JSON" = "{}" ]; then
+        echo "$(date) ERROR: Received empty JSON input from Wazuh" >> /var/ossec/logs/integrations.log
+        exit 1
+    fi
+
+    ALERT_LEVEL=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.rule.level // 0')
+    ALERT_ID=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.rule.id // "unknown"')
+    ALERT_DESC=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.rule.description // "No description"')
+    AGENT_NAME=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.agent.name // "N/A"')
+    AGENT_IP=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.agent.ip // "N/A"')
+    TIMESTAMP=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.timestamp // "unknown"')
+
+    if [ -z "$ALERT_LEVEL" ] || [ "$ALERT_LEVEL" = "null" ]; then
+        ALERT_LEVEL=0
+    fi
+
+    if [ "$ALERT_ID" = "unknown" ] && [ "$ALERT_LEVEL" = "0" ]; then
+        echo "$(date) WARNING: Alert missing critical fields, skipping" >> /var/ossec/logs/integrations.log
+        exit 0
+    fi
+
+    if [ "$ALERT_LEVEL" -ge 12 ]; then
+        TOPIC="wazuh-critical"
+        PRIORITY="urgent"
+        TAGS="rotating_light,wazuh"
+    elif [ "$ALERT_LEVEL" -ge 7 ]; then
+        TOPIC="wazuh-high"
+        PRIORITY="high"
+        TAGS="warning,wazuh"
+    elif [ "$ALERT_LEVEL" -ge 4 ]; then
+        TOPIC="wazuh-medium"
+        PRIORITY="default"
+        TAGS="information_source,wazuh"
+    else
+        TOPIC="wazuh-alerts"
+        PRIORITY="low"
+        TAGS="wazuh"
+    fi
+
+    TITLE="Wazuh Alert: ${ALERT_DESC}"
+    MESSAGE="Level: ${ALERT_LEVEL}, Rule ID: ${ALERT_ID}, Agent: ${AGENT_NAME} (${AGENT_IP}), Time: ${TIMESTAMP}, Description: ${ALERT_DESC}"
+
+    CURL_OUTPUT=$(curl -s -u "${NTFY_USER}:${NTFY_PASS}" \
+        -H "Title: ${TITLE}" \
+        -H "Priority: ${PRIORITY}" \
+        -H "Tags: ${TAGS}" \
+        -d "${MESSAGE}" \
+        "${NTFY_URL}/${TOPIC}" 2>&1)
+
+    CURL_EXIT=$?
+    if [ $CURL_EXIT -ne 0 ]; then
+        echo "$(date) ERROR: Failed to send alert - Level:$ALERT_LEVEL RuleID:$ALERT_ID Agent:$AGENT_NAME (curl exit: $CURL_EXIT)" >> /var/ossec/logs/integrations.log
+    fi
+
+    exit 0

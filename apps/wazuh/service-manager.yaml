@@ -1,0 +1,15 @@
+# ClusterIP service for manager API — used by dashboard to reach the API
+# Agent connections use the wazuh-agents LoadBalancer service instead
+apiVersion: v1
+kind: Service
+metadata:
+  name: wazuh-manager
+  namespace: wazuh
+spec:
+  type: ClusterIP
+  selector:
+    app: wazuh-manager
+  ports:
+    - name: api
+      port: 55000
+      targetPort: 55000

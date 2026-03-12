@@ -1,0 +1,183 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: wazuh-manager
+  namespace: wazuh
+spec:
+  serviceName: wazuh-manager
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wazuh-manager
+  template:
+    metadata:
+      labels:
+        app: wazuh-manager
+    spec:
+      initContainers:
+        # Wait for indexer to be healthy before starting manager
+        - name: wait-for-indexer
+          image: curlimages/curl:8.6.0
+          command:
+            - sh
+            - -c
+            - |
+              until curl -sk -u "admin:REDACTED_INDEXER_PW" \
+                https://wazuh-indexer:9200/_cluster/health \
+                | grep -q '"status":"green"\|"status":"yellow"'; do
+                echo "Waiting for Wazuh indexer..."
+                sleep 10
+              done
+              echo "Indexer is ready."
+        # Copy jq binary from slim image into shared tools volume
+        - name: install-jq
+          image: ghcr.io/jqlang/jq:1.7.1
+          command: ["cp", "/usr/local/bin/jq", "/tools/jq"]
+          volumeMounts:
+            - name: tools
+              mountPath: /tools
+      containers:
+        - name: wazuh-manager
+          image: wazuh/wazuh-manager:4.14.0
+          env:
+            - name: PATH
+              value: "/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            - name: INDEXER_URL
+              value: "https://wazuh-indexer:9200"
+            - name: INDEXER_USERNAME
+              value: "admin"
+            - name: INDEXER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: indexer-admin-password
+            - name: FILEBEAT_SSL_VERIFICATION_MODE
+              value: "full"
+            - name: SSL_CERTIFICATE_AUTHORITIES
+              value: "/etc/ssl/root-ca.pem"
+            - name: SSL_CERTIFICATE
+              value: "/etc/ssl/filebeat.pem"
+            - name: SSL_KEY
+              value: "/etc/ssl/filebeat.key"
+            - name: API_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: api-username
+            - name: API_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: api-password
+          ports:
+            - containerPort: 1514
+              name: agent-events
+              protocol: TCP
+            - containerPort: 1515
+              name: agent-enroll
+              protocol: TCP
+            - containerPort: 514
+              name: syslog
+              protocol: UDP
+            - containerPort: 55000
+              name: api
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 1.5Gi
+          volumeMounts:
+            - name: wazuh-manager-data
+              mountPath: /var/ossec
+            - name: wazuh-manager-filebeat
+              mountPath: /etc/filebeat
+              subPath: filebeat-etc
+            - name: wazuh-manager-filebeat
+              mountPath: /var/lib/filebeat
+              subPath: filebeat-var
+            - name: manager-certs
+              mountPath: /etc/ssl
+              readOnly: true
+            - name: ossec-conf
+              mountPath: /wazuh-config-mount/etc/ossec.conf
+              subPath: ossec.conf
+              readOnly: true
+            - name: local-rules
+              mountPath: /wazuh-config-mount/etc/rules/local_rules.xml
+              subPath: local_rules.xml
+              readOnly: true
+            - name: custom-ntfy-script
+              mountPath: /var/ossec/integrations/custom-ntfy
+              subPath: custom-ntfy
+            - name: tools
+              mountPath: /tools
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/chmod", "+x", "/var/ossec/integrations/custom-ntfy"]
+          readinessProbe:
+            exec:
+              command:
+                - bash
+                - -c
+                - "/var/ossec/bin/wazuh-control status | grep -q 'wazuh-analysisd is running'"
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 10
+      volumes:
+        - name: manager-certs
+          projected:
+            sources:
+              - secret:
+                  name: wazuh-manager-cert
+                  items:
+                    - key: ca.crt
+                      path: root-ca.pem
+                    - key: tls.crt
+                      path: filebeat.pem
+                    - key: tls.key
+                      path: filebeat.key
+        - name: ossec-conf
+          configMap:
+            name: wazuh-manager-config
+            items:
+              - key: ossec.conf
+                path: ossec.conf
+        - name: local-rules
+          configMap:
+            name: wazuh-manager-config
+            items:
+              - key: local_rules.xml
+                path: local_rules.xml
+        - name: custom-ntfy-script
+          configMap:
+            name: wazuh-manager-config
+            defaultMode: 0755
+            items:
+              - key: custom-ntfy
+                path: custom-ntfy
+        - name: tools
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: wazuh-manager-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 10Gi
+    - metadata:
+        name: wazuh-manager-filebeat
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 1Gi

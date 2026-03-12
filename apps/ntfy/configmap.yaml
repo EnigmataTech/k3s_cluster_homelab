@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ntfy-config
+  namespace: ntfy
+data:
+  server.yml: |
+    base-url: "http://ntfy.enigmata.local"
+    listen-http: ":80"
+    cache-file: "/data/cache.db"
+    auth-file: "/data/auth.db"
+    attachment-cache-dir: "/data/attachments"
+    attachment-total-size-limit: "5G"
+    attachment-file-size-limit: "15M"
+    attachment-expiry-duration: "3h"
+    auth-default-access: "deny-all"
+    visitor-request-limit-burst: 60
+    visitor-request-limit-replenish: "5s"
+    visitor-message-daily-limit: 0
+    cache-duration: "12h"
+    keepalive-interval: "45s"
+    manager-interval: "1m"
+    enable-signup: false
+    enable-login: true
+    enable-reservations: false
+    enable-metrics: false
+    upstream-base-url: "https://ntfy.sh"
+    behind-proxy: true
+    log-level: "info"
+    log-format: "text"
+    web-root: "/"

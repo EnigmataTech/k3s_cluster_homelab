@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wazuh-dashboard-config
+  namespace: wazuh
+data:
+  opensearch_dashboards.yml: |
+    server.host: 0.0.0.0
+    server.port: 5601
+    # HTTP only — TLS terminated at nginx ingress
+    server.ssl.enabled: false
+    opensearch.hosts: https://wazuh-indexer:9200
+    opensearch.ssl.verificationMode: certificate
+    opensearch.ssl.certificateAuthorities: ["/usr/share/wazuh-dashboard/certs/root-ca.pem"]
+    opensearch.requestHeadersWhitelist: ["securitytenant","Authorization"]
+    opensearch_security.multitenancy.enabled: false
+    opensearch_security.readonly_mode.roles: ["kibana_read_only"]
+    uiSettings.overrides.defaultRoute: /app/wz-home
+    opensearch_security.cookie.ttl: 900000
+    opensearch_security.session.ttl: 900000
+    opensearch_security.session.keepalive: true
+
+  wazuh.yml: |
+    hosts:
+      - default:
+          url: "https://wazuh-manager"
+          port: 55000
+          username: wazuh-wui
+          password: "REDACTED_API_PW"
+          run_as: false
