@@ -1,0 +1,15 @@
+# Single-replica StorageClass for Wazuh — workers have limited free space
+# Wazuh data doesn't need cross-node redundancy in a homelab;
+# Proxmox VM snapshots serve as the backup strategy.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: longhorn-single
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: "1"
+  staleReplicaTimeout: "2880"
+  fromBackup: ""
