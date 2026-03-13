@@ -44,7 +44,7 @@ data:
       config_version: 2
 
     admin:
-      hash: "$2y$12$fg5JLO4ugMV5nAex61RtvOxLeK9NYfEFUVKqPhUuyB73kh1GuGSA6"
+      hash: "$2y$12$4EdtmojGai8tBBavd45N9.ixVgWH.Hnf1phJArPcwqSP8VwF46.tW"
       reserved: true
       backend_roles:
       - "admin"
