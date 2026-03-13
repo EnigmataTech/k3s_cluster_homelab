@@ -22,6 +22,28 @@ spec:
           volumeMounts:
             - name: wazuh-manager-data
               mountPath: /data
+        # Ensure required dirs exist and apply ossec.conf from configmap on every start
+        # This fixes two issues:
+        # 1. /var/ossec/var/multigroups being empty causes 0-wazuh-init to exit early
+        # 2. When 0-wazuh-init exits early, mount_files() never runs so ossec.conf isn't updated
+        - name: apply-config
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /data/var/multigroups
+              touch /data/var/multigroups/.keep
+              cp /config/ossec.conf /data/etc/ossec.conf
+              chmod 664 /data/etc/ossec.conf
+              echo "apply-config: ossec.conf and multigroups fixed"
+          volumeMounts:
+            - name: wazuh-manager-data
+              mountPath: /data
+            - name: ossec-conf
+              mountPath: /config/ossec.conf
+              subPath: ossec.conf
+              readOnly: true
         # Wait for indexer port to be available before starting manager
         - name: wait-for-indexer
           image: busybox:1.36

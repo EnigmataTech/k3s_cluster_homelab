@@ -80,7 +80,7 @@ data:
       </sca>
 
       <vulnerability-detection>
-        <enabled>yes</enabled>
+        <enabled>no</enabled>
         <index-status>yes</index-status>
         <feed-update-interval>6h</feed-update-interval>
       </vulnerability-detection>
