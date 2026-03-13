@@ -119,10 +119,6 @@ spec:
               subPath: custom-ntfy
             - name: tools
               mountPath: /tools
-          lifecycle:
-            postStart:
-              exec:
-                command: ["/bin/chmod", "+x", "/var/ossec/integrations/custom-ntfy"]
           readinessProbe:
             exec:
               command:
