@@ -15,24 +15,29 @@ spec:
         app: wazuh-manager
     spec:
       initContainers:
-        # Wait for indexer to be healthy before starting manager
+        # Seed /var/ossec PVC from the image's bundled installation (first run only)
+        - name: init-wazuh-data
+          image: wazuh/wazuh-manager:4.14.0
+          command: ["sh", "-c", "if [ ! -d /data/framework ]; then cp -aR /var/ossec/. /data/; fi"]
+          volumeMounts:
+            - name: wazuh-manager-data
+              mountPath: /data
+        # Wait for indexer port to be available before starting manager
         - name: wait-for-indexer
-          image: curlimages/curl:8.6.0
+          image: busybox:1.36
           command:
             - sh
             - -c
             - |
-              until curl -sk -u "admin:oZL@6l6N!3y\$yM" \
-                https://wazuh-indexer:9200/_cluster/health \
-                | grep -q '"status":"green"\|"status":"yellow"'; do
-                echo "Waiting for Wazuh indexer..."
+              until nc -z wazuh-indexer 9200; do
+                echo "Waiting for Wazuh indexer port..."
                 sleep 10
               done
-              echo "Indexer is ready."
-        # Copy jq binary from slim image into shared tools volume
+              echo "Indexer port is up."
+        # Copy jq binary into shared tools volume
         - name: install-jq
-          image: ghcr.io/jqlang/jq:1.7.1
-          command: ["cp", "/usr/local/bin/jq", "/tools/jq"]
+          image: alpine:3.19
+          command: ["sh", "-c", "apk add --no-cache jq && cp /usr/bin/jq /tools/jq"]
           volumeMounts:
             - name: tools
               mountPath: /tools

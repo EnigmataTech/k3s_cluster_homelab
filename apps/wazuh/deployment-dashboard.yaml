@@ -16,18 +16,16 @@ spec:
       initContainers:
         # Wait for both indexer and manager before starting dashboard
         - name: wait-for-indexer
-          image: curlimages/curl:8.6.0
+          image: busybox:1.36
           command:
             - sh
             - -c
             - |
-              until curl -sk -u "admin:oZL@6l6N!3y\$yM" \
-                https://wazuh-indexer:9200/_cluster/health \
-                | grep -q '"status":"green"\|"status":"yellow"'; do
-                echo "Waiting for Wazuh indexer..."
+              until nc -z wazuh-indexer 9200; do
+                echo "Waiting for Wazuh indexer port..."
                 sleep 10
               done
-              echo "Indexer ready."
+              echo "Indexer port is up."
         - name: wait-for-manager
           image: curlimages/curl:8.6.0
           command:
