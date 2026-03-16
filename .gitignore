@@ -1,0 +1,2 @@
+# Secrets — never commit real credentials
+apps/wazuh/secret.yaml
