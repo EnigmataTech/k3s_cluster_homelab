@@ -80,9 +80,8 @@ data:
       </sca>
 
       <vulnerability-detection>
-        <enabled>yes</enabled>
-        <index-status>yes</index-status>
-        <feed-update-interval>6h</feed-update-interval>
+        <enabled>no</enabled>
+        <!-- disabled: VD feed extraction fills 10Gi PVC on k8s, insufficient disk headroom -->
       </vulnerability-detection>
 
       <indexer>
