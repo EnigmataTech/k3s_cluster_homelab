@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - storageclass.yaml
-  - secret.yaml
+  # secret.yaml is gitignored — apply manually: kubectl apply -f apps/wazuh/secret.yaml
   - certificates.yaml
   - configmap-indexer.yaml
   - configmap-manager.yaml
