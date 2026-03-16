@@ -26,5 +26,5 @@ data:
           url: "https://wazuh-manager"
           port: 55000
           username: wazuh-wui
-          password: "MyS3cr37P450r.*-"
+          password: "CHANGE_ME"  # set from secret wazuh-credentials/api-password
           run_as: false

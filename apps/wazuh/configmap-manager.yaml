@@ -677,7 +677,7 @@ data:
 
     NTFY_URL="http://ntfy.ntfy.svc.cluster.local"
     NTFY_USER="wazuh-integration"
-    NTFY_PASS="0CB12JwB942djwAcPao0oOfHFQw843Gt"
+    NTFY_PASS="CHANGE_ME"  # set from secret wazuh-credentials/ntfy-password
 
     INPUT_JSON=$(cat "$1")
 
