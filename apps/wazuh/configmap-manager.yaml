@@ -80,7 +80,7 @@ data:
       </sca>
 
       <vulnerability-detection>
-        <enabled>no</enabled>
+        <enabled>yes</enabled>
         <index-status>yes</index-status>
         <feed-update-interval>6h</feed-update-interval>
       </vulnerability-detection>
@@ -237,7 +237,7 @@ data:
         <disabled>yes</disabled>
       </cluster>
 
-      <!-- ntfy integration - alerts level 7+ forwarded to push notifications -->
+      <!-- ntfy integration - alerts level >=7 forwarded to push notifications -->
       <integration>
         <name>custom-ntfy</name>
         <hook_url>ntfy</hook_url>
@@ -686,12 +686,12 @@ data:
         exit 1
     fi
 
-    ALERT_LEVEL=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.rule.level // 0')
-    ALERT_ID=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.rule.id // "unknown"')
-    ALERT_DESC=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.rule.description // "No description"')
-    AGENT_NAME=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.agent.name // "N/A"')
-    AGENT_IP=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.agent.ip // "N/A"')
-    TIMESTAMP=$(echo "$INPUT_JSON" | /usr/bin/jq -r '.timestamp // "unknown"')
+    ALERT_LEVEL=$(echo "$INPUT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('rule',{}).get('level',0))")
+    ALERT_ID=$(echo "$INPUT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('rule',{}).get('id','unknown'))")
+    ALERT_DESC=$(echo "$INPUT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('rule',{}).get('description','No description'))")
+    AGENT_NAME=$(echo "$INPUT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('agent',{}).get('name','N/A'))")
+    AGENT_IP=$(echo "$INPUT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('agent',{}).get('ip','N/A'))")
+    TIMESTAMP=$(echo "$INPUT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('timestamp','unknown'))")
 
     if [ -z "$ALERT_LEVEL" ] || [ "$ALERT_LEVEL" = "null" ]; then
         ALERT_LEVEL=0
