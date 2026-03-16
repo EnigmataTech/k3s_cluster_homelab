@@ -5,7 +5,7 @@ metadata:
   namespace: ntfy
 data:
   server.yml: |
-    base-url: "http://ntfy.enigmata.local"
+    base-url: "http://100.123.93.18:30808"
     listen-http: ":80"
     cache-file: "/data/cache.db"
     auth-file: "/data/auth.db"
