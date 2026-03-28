@@ -96,6 +96,11 @@ spec:
                 secretKeyRef:
                   name: wazuh-credentials
                   key: api-password
+            - name: NTFY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: ntfy-password
           ports:
             - containerPort: 1514
               name: agent-events
