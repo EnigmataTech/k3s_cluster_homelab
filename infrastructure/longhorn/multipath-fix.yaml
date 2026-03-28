@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: longhorn-multipath-fix
+  namespace: longhorn-system
+  labels:
+    app: longhorn-multipath-fix
+spec:
+  selector:
+    matchLabels:
+      app: longhorn-multipath-fix
+  template:
+    metadata:
+      labels:
+        app: longhorn-multipath-fix
+    spec:
+      hostPID: true
+      containers:
+      - name: multipath-fix
+        image: busybox:1.36
+        command:
+        - /bin/sh
+        - -c
+        - |
+          # Apply multipath blacklist for Longhorn devices
+          nsenter -t 1 -m -u -i -n -- sh -c '
+            CONF="/etc/multipath.conf"
+            MARKER="# Longhorn fix applied"
+
+            # Check if fix already applied
+            if grep -q "$MARKER" "$CONF" 2>/dev/null; then
+              echo "Multipath fix already applied"
+            else
+              echo "Applying multipath fix..."
+              cat > "$CONF" << EOF
+# Longhorn fix applied
+defaults {
+    user_friendly_names yes
+}
+blacklist {
+    devnode "^sd[a-z0-9]+"
+}
+EOF
+              systemctl restart multipathd 2>/dev/null || true
+              echo "Multipath fix applied and multipathd restarted"
+            fi
+          '
+          # Sleep forever - DaemonSet needs to keep running
+          echo "Multipath configuration complete. Sleeping..."
+          sleep infinity
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            cpu: 1m
+            memory: 8Mi
+          limits:
+            cpu: 10m
+            memory: 16Mi
+      tolerations:
+      - operator: Exists
+      priorityClassName: system-node-critical
