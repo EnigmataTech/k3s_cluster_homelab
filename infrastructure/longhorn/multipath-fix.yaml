@@ -22,31 +22,8 @@ spec:
         - /bin/sh
         - -c
         - |
-          # Apply multipath blacklist for Longhorn devices
-          nsenter -t 1 -m -u -i -n -- sh -c '
-            CONF="/etc/multipath.conf"
-            MARKER="# Longhorn fix applied"
-
-            # Check if fix already applied
-            if grep -q "$MARKER" "$CONF" 2>/dev/null; then
-              echo "Multipath fix already applied"
-            else
-              echo "Applying multipath fix..."
-              cat > "$CONF" << EOF
-# Longhorn fix applied
-defaults {
-    user_friendly_names yes
-}
-blacklist {
-    devnode "^sd[a-z0-9]+"
-}
-EOF
-              systemctl restart multipathd 2>/dev/null || true
-              echo "Multipath fix applied and multipathd restarted"
-            fi
-          '
-          # Sleep forever - DaemonSet needs to keep running
-          echo "Multipath configuration complete. Sleeping..."
+          nsenter -t 1 -m -u -i -n -- sh -c 'grep -q "Longhorn fix" /etc/multipath.conf 2>/dev/null && echo "Already applied" && exit 0; echo -e "# Longhorn fix\ndefaults {\n    user_friendly_names yes\n}\nblacklist {\n    devnode \"^sd[a-z0-9]+\"\n}" > /etc/multipath.conf; systemctl restart multipathd 2>/dev/null; echo "Applied"'
+          echo "Multipath fix complete. Sleeping..."
           sleep infinity
         securityContext:
           privileged: true
