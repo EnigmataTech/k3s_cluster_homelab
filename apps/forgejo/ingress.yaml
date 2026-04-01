@@ -9,7 +9,11 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-dns01-production"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "512m"  # Allow large Git pushes
+    nginx.ingress.kubernetes.io/proxy-body-size: "2048m"  # Allow large Git pushes (increased for Lean repo)
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/client-body-buffer-size: "1024m"
 spec:
   ingressClassName: nginx
   tls:
