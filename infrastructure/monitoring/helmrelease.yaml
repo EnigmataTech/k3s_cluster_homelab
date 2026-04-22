@@ -15,6 +15,16 @@ spec:
         namespace: monitoring
       interval: 12h
   values:
+    prometheus:
+      prometheusSpec:
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: longhorn
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 20Gi
     grafana:
       service:
         type: ClusterIP
