@@ -6,3 +6,4 @@ resources:
   - helmrelease.yaml
   - nodeport.yaml
   - multipath-fix.yaml
+  - storageclass-2replica.yaml
