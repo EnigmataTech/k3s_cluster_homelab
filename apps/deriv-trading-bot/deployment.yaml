@@ -32,8 +32,6 @@ spec:
         - secretRef:
             name: deriv-trading-bot-secrets
         env:
-        - name: DATABASE_URL
-          value: "sqlite:////app/data/trading_database.db"
         - name: HOST
           value: "0.0.0.0"
         - name: PORT
