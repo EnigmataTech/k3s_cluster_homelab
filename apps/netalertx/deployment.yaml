@@ -52,14 +52,12 @@ spec:
               mountPath: /etc/localtime
               readOnly: true
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 20211
             initialDelaySeconds: 30
             periodSeconds: 15
           livenessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 20211
             initialDelaySeconds: 60
             periodSeconds: 30
