@@ -20,6 +20,17 @@ spec:
       containers:
         - name: netalertx
           image: ghcr.io/netalertx/netalertx:26.5
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+                - CHOWN
+                - SETGID
+                - SETUID
+                - NET_BIND_SERVICE
+            seccompProfile:
+              type: Unconfined
           ports:
             - containerPort: 20211
               name: http
