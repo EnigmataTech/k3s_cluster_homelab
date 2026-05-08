@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netalertx
+  namespace: netalertx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netalertx
+  template:
+    metadata:
+      labels:
+        app: netalertx
+    spec:
+      # hostNetwork required for ARP scanning to discover LAN devices
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeName: k3s-worker-01
+      containers:
+        - name: netalertx
+          image: ghcr.io/netalertx/netalertx:26.5
+          ports:
+            - containerPort: 20211
+              name: http
+            - containerPort: 20212
+              name: graphql
+          env:
+            - name: TZ
+              value: "America/Halifax"
+            - name: PORT
+              value: "20211"
+            - name: GRAPHQL_PORT
+              value: "20212"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: localtime
+              mountPath: /etc/localtime
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 20211
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 20211
+            initialDelaySeconds: 60
+            periodSeconds: 30
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: netalertx-data
+        - name: localtime
+          hostPath:
+            path: /etc/localtime

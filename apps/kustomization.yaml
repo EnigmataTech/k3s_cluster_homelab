@@ -7,3 +7,5 @@ resources:
   - renovate
   - ntfy
   - wazuh
+  - netalertx
+  - ip-speed

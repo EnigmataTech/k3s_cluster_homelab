@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ip-speed
+  namespace: ip-speed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ip-speed
+  template:
+    metadata:
+      labels:
+        app: ip-speed
+    spec:
+      containers:
+        - name: ip-speed
+          image: jason5ng32/myip:latest
+          ports:
+            - containerPort: 18966
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 18966
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 18966
+            initialDelaySeconds: 20
+            periodSeconds: 30
