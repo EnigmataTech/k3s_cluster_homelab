@@ -6,7 +6,7 @@ metadata:
 data:
   Corefile: |
     enigmata.local:53 {
-        bind 100.89.213.85
+        bind 100.89.213.85 192.168.1.222
         template IN A enigmata.local {
             answer "{{ .Name }} 60 IN A 100.89.213.85"
         }
