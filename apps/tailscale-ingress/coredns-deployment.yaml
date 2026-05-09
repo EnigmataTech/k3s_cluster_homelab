@@ -15,14 +15,7 @@ spec:
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
-      nodeName: k3s-control-01
-      tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
-        - key: node-role.kubernetes.io/master
-          operator: Exists
-          effect: NoSchedule
+      nodeName: k3s-worker-01
       containers:
         - name: coredns
           image: coredns/coredns:1.11.3
