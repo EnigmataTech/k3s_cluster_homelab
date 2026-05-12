@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - storageclass.yaml
-  # secret.yaml is gitignored — apply manually: kubectl apply -f apps/wazuh/secret.yaml
+  - secret.yaml  # SOPS-encrypted; decrypted by Flux via sops-age secret in flux-system
   - certificates.yaml
   - configmap-indexer.yaml
   - configmap-manager.yaml

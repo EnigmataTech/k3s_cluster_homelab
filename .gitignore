@@ -1,5 +1,6 @@
-# Secrets — never commit real credentials
-apps/wazuh/secret.yaml
+# Plaintext secrets — only SOPS-encrypted secrets are committed
+apps/**/secret.plain.yaml
+*.plain.yaml
 
 # Duplicate directory (scripts already exist in scripts/)
 scripts/scripts/
