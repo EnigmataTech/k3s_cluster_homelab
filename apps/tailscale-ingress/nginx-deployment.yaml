@@ -20,7 +20,7 @@ spec:
       nodeName: k3s-worker-01
       containers:
         - name: nginx
-          image: nginx:1.27-alpine
+          image: nginx:1.30-alpine
           securityContext:
             capabilities:
               add:
