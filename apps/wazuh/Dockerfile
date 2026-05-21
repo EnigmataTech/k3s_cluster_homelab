@@ -1,4 +1,4 @@
-FROM wazuh/wazuh-manager:4.14.0
+FROM wazuh/wazuh-manager:4.14.5@sha256:d728ebe4a1b7d02d1216f937743f34d5827b61985aed8200ba5aace4b0f67022
 
 # Install jq for custom-ntfy integration script
 # Note: The initContainer approach in statefulset-manager.yaml is preferred
