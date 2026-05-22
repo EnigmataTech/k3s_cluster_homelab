@@ -255,7 +255,7 @@ data:
 
   local_rules.xml: |
     <!-- Custom Wazuh Rules for Home Lab Security Monitoring -->
-    <!-- Created: 2025-11-27 -->
+    <!-- Created: 2025-11-27 | Last updated: 2026-05-15 -->
     <group name="local,">
 
     <!-- SSH Auth -->
@@ -304,6 +304,17 @@ data:
         <user>root</user>
         <description>SSH: Successful root login (security policy violation)</description>
         <group>authentication_success,policy_violation,pci_dss_10.2.5,</group>
+      </rule>
+      <!-- 100108: Suppress ntfy push for legitimate root SSH from Tailscale CGNAT range
+           (100.64.0.0/10 = 100.64.0.0–100.127.255.255). When 100107 fires AND srcip
+           is in tailnet, this child rule supersedes the parent in the alert stream
+           with level 4 — still logged (log_alert_level=3) but below ntfy threshold (7).
+           This prevents pages when YOU (or hermes on your own boxes) SSH into PVE. -->
+      <rule id="100108" level="4">
+        <if_sid>100107</if_sid>
+        <srcip>100.64.0.0/10</srcip>
+        <description>SSH: Successful root login from Tailscale device (legitimate)</description>
+        <group>authentication_success,tailnet_login,</group>
       </rule>
       <rule id="100110" level="3">
         <decoded_as>sudo</decoded_as>
@@ -555,14 +566,15 @@ data:
         <group>network,ddos_attack,availability,</group>
       </rule>
       <rule id="100504" level="4">
-        <match>iptables.*DROP|firewall.*blocked|UFW BLOCK</match>
-        <description>Network: Firewall blocked connection attempt</description>
+        <program_name>kernel</program_name>
+        <match>UFW BLOCK</match>
+        <description>Network: UFW firewall blocked inbound connection</description>
         <group>network,firewall,blocked_connection,</group>
       </rule>
       <rule id="100505" level="6" frequency="15" timeframe="300">
         <if_matched_sid>100504</if_matched_sid>
         <same_source_ip />
-        <description>Network: Multiple firewall blocks from same IP</description>
+        <description>Network: Multiple UFW blocks from same source IP (recon/scan)</description>
         <group>network,reconnaissance,firewall,</group>
       </rule>
       <rule id="100506" level="5">
@@ -636,11 +648,59 @@ data:
         <description>Command: Persistence mechanism modification</description>
         <group>command_execution,persistence,</group>
       </rule>
+
+      <!-- FIXED rule 100704: Tightened to only match actual piped curl/wget commands -->
+      <!-- Removed \bsh\b and \bbash\b patterns as they created false positives from 'shm','bash' in paths -->
       <rule id="100704" level="6">
-        <match>wget.*\||curl.*\||wget.*sh|curl.*sh</match>
-        <description>Command: Piped download and execution</description>
+        <if_sid>530</if_sid>
+        <match>wget .*\| |curl .*\| |wget -O-.*sh|wget -qO-.*sh|curl -s.*\| |curl -fsSL.*sh</match>
+        <description>Command: Piped download and execution (e.g., curl | sh, wget -O- | bash)</description>
         <group>command_execution,suspicious_download,code_execution,</group>
       </rule>
+      
+      <!-- Override: UFW BLOCK lines should NOT trigger piped-download rules -->
+      <rule id="100714" level="0">
+        <if_sid>100704</if_sid>
+        <match>UFW BLOCK</match>
+        <description>Override: UFW BLOCK is not a piped download</description>
+      </rule>
+      
+      <!-- Override: ish-hid kernel messages on Proxmox are not piped downloads -->
+      <rule id="100715" level="0">
+        <if_sid>100704</if_sid>
+        <program_name>kernel</program_name>
+        <match>ish-hid</match>
+        <description>Override: Intel HID kernel driver message is not a piped download</description>
+      </rule>
+      
+      <!-- Override: qemu-ga guest agent commands are normal VPS behavior -->
+      <rule id="100716" level="0">
+        <if_sid>100704</if_sid>
+        <program_name>qemu-ga</program_name>
+        <description>Override: QEMU guest agent commands are normal VPS operation</description>
+      </rule>
+      
+      <!-- Override: CRON jobs are not piped downloads -->
+      <rule id="100717" level="0">
+        <if_sid>100704</if_sid>
+        <program_name>CRON</program_name>
+        <description>Override: CRON is not a piped download</description>
+      </rule>
+      
+      <!-- Override: tailscaled status messages are not piped downloads -->
+      <rule id="100718" level="0">
+        <if_sid>100704</if_sid>
+        <program_name>tailscaled</program_name>
+        <description>Override: Tailscale daemon messages are not piped downloads</description>
+      </rule>
+      
+      <!-- Override: dbus/fwupd/auditd system messages are not piped downloads -->
+      <rule id="100719" level="0">
+        <if_sid>100704</if_sid>
+        <program_name>dbus-daemon|fwupd|audit</program_name>
+        <description>Override: System daemon messages are not piped downloads</description>
+      </rule>
+
       <rule id="100705" level="7">
         <match>base64 -d|echo.*base64.*exec|eval.*base64</match>
         <description>Command: Base64 encoded command execution (obfuscation)</description>
