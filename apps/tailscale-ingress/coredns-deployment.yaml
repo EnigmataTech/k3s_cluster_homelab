@@ -20,7 +20,7 @@ spec:
       nodeName: k3s-worker-01
       containers:
         - name: coredns
-          image: coredns/coredns:1.11.3
+          image: coredns/coredns:1.14.3
           args: ["-conf", "/etc/coredns/Corefile"]
           securityContext:
             capabilities:
