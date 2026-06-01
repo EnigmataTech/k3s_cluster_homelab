@@ -19,7 +19,7 @@ spec:
       initContainers:
         # OpenSearch requires vm.max_map_count >= 262144
         - name: sysctl
-          image: busybox:1.36
+          image: busybox:1.38
           command: ["sh", "-c", "sysctl -w vm.max_map_count=262144 && chown -R 1000:1000 /var/lib/wazuh-indexer"]
           securityContext:
             privileged: true
@@ -28,7 +28,7 @@ spec:
               mountPath: /var/lib/wazuh-indexer
       containers:
         - name: wazuh-indexer
-          image: wazuh/wazuh-indexer:4.14.0
+          image: wazuh/wazuh-indexer:4.14.5
           env:
             - name: OPENSEARCH_JAVA_OPTS
               value: "-Xms1g -Xmx1g"
