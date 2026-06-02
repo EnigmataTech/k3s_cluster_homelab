@@ -57,7 +57,7 @@ spec:
           privileged: true
       containers:
       - name: forgejo
-        image: codeberg.org/forgejo/forgejo:9.0.3-rootless
+        image: codeberg.org/forgejo/forgejo:15.0.2-rootless
         ports:
         - containerPort: 3000
           name: http
