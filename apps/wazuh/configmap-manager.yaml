@@ -749,7 +749,7 @@ data:
     # Wazuh to Hermes Integration Script
     # Sends alerts level >=10 to Hermes webhook for LLM triage -> Telegram
 
-    HERMES_URL="http://stinger.taile97edd.ts.net:8644/webhooks/wazuh-alerts"
+    HERMES_URL="http://100.99.226.7:8644/webhooks/wazuh-alerts"  # StingerVPS Tailscale IP
     HERMES_SECRET="${HERMES_WEBHOOK_SECRET:-}"
     LOG="/var/ossec/logs/integrations.log"
 
