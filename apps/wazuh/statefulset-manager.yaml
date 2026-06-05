@@ -101,6 +101,11 @@ spec:
                 secretKeyRef:
                   name: wazuh-credentials
                   key: ntfy-password
+            - name: HERMES_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wazuh-credentials
+                  key: hermes-webhook-secret
           ports:
             - containerPort: 1514
               name: agent-events
@@ -144,6 +149,9 @@ spec:
             - name: custom-ntfy-script
               mountPath: /var/ossec/integrations/custom-ntfy
               subPath: custom-ntfy
+            - name: custom-hermes-script
+              mountPath: /var/ossec/integrations/custom-hermes
+              subPath: custom-hermes
             - name: tools
               mountPath: /tools
           readinessProbe:
@@ -188,6 +196,13 @@ spec:
             items:
               - key: custom-ntfy
                 path: custom-ntfy
+        - name: custom-hermes-script
+          configMap:
+            name: wazuh-manager-config
+            defaultMode: 0755
+            items:
+              - key: custom-hermes
+                path: custom-hermes
         - name: tools
           emptyDir: {}
   volumeClaimTemplates:

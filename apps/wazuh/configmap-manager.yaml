@@ -244,6 +244,14 @@ data:
         <alert_format>json</alert_format>
       </integration>
 
+      <!-- hermes integration - alerts level >=10 triaged by LLM and sent to Telegram -->
+      <integration>
+        <name>custom-hermes</name>
+        <hook_url>hermes</hook_url>
+        <level>10</level>
+        <alert_format>json</alert_format>
+      </integration>
+
     </ossec_config>
 
     <ossec_config>
@@ -735,3 +743,48 @@ data:
     fi
 
     exit 0
+
+  custom-hermes: |
+    #!/bin/bash
+    # Wazuh to Hermes Integration Script
+    # Sends alerts level >=10 to Hermes webhook for LLM triage -> Telegram
+
+    HERMES_URL="http://stinger.taile97edd.ts.net:8644/webhooks/wazuh-alerts"
+    HERMES_SECRET="${HERMES_WEBHOOK_SECRET:-}"
+    LOG="/var/ossec/logs/integrations.log"
+
+    INPUT_JSON=$(cat "$1")
+
+    if [ -z "$INPUT_JSON" ] || [ "$INPUT_JSON" = "{}" ]; then
+        echo "$(date) hermes: ERROR: Empty JSON input" >> "$LOG"
+        exit 1
+    fi
+
+    # Compute HMAC-SHA256 signature
+    SIGNATURE=$(printf '%s' "$INPUT_JSON" | openssl dgst -sha256 -hmac "$HERMES_SECRET" -hex 2>/dev/null | awk '{print $NF}')
+
+    if [ -z "$SIGNATURE" ]; then
+        echo "$(date) hermes: ERROR: Failed to compute HMAC signature" >> "$LOG"
+        exit 1
+    fi
+
+    # POST alert JSON to Hermes webhook
+    CURL_OUTPUT=$(curl -s -w "\n%{http_code}" \
+        -X POST \
+        -H "Content-Type: application/json" \
+        -H "X-Webhook-Signature: ${SIGNATURE}" \
+        -H "X-Request-ID: wazuh-$(date +%s%N)" \
+        -d "$INPUT_JSON" \
+        "$HERMES_URL" 2>&1)
+
+    HTTP_CODE=$(echo "$CURL_OUTPUT" | tail -1)
+    RESPONSE_BODY=$(echo "$CURL_OUTPUT" | sed '$d')
+
+    if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ] 2>/dev/null; then
+        exit 0
+    else
+        ALERT_LEVEL=$(echo "$INPUT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('rule',{}).get('level',0))" 2>/dev/null)
+        ALERT_ID=$(echo "$INPUT_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('rule',{}).get('id','unknown'))" 2>/dev/null)
+        echo "$(date) hermes: ERROR: HTTP ${HTTP_CODE} - Level:${ALERT_LEVEL} RuleID:${ALERT_ID} Body:${RESPONSE_BODY}" >> "$LOG"
+        exit 1
+    fi
