@@ -31,10 +31,10 @@ spec:
                 - name: TRADE_AMOUNT
                   value: "1.0"
                 - name: TRADE_DURATION
-                  value: "5"
+                  value: "10"           # ticks (max for binaries) — longest hold so positions show
                 - name: TRADE_DURATION_UNIT
                   value: "t"
-                - name: BUY_THRESHOLD     # ±1 for more activity (was ±2)
+                - name: BUY_THRESHOLD     # ±1, traded on score sign (see script)
                   value: "1"
               volumeMounts:
                 - name: script

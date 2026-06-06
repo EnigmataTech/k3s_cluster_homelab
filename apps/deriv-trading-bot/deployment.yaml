@@ -45,7 +45,7 @@ spec:
         - name: MAX_DAILY_LOSS
           value: "100"
         - name: MAX_DAILY_TRADES
-          value: "50"
+          value: "1000"   # ±1 auto-trader is active; daily-loss guard ($100) is the real brake
         # Unify the agent identity with the auth-disabled REST default user
         # so /api/trades/agent and the chart show the bot's real trades.
         - name: MCP_AGENT_USER_ID
