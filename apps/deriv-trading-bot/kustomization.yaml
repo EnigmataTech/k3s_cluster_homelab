@@ -6,3 +6,13 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - cronjob.yaml
+
+configMapGenerator:
+  - name: deriv-auto-trader-script
+    namespace: deriv-trading-bot
+    files:
+      - deriv-auto-trade.py
+
+generatorOptions:
+  disableNameSuffixHash: true

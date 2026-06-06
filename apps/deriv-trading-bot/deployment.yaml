@@ -46,6 +46,10 @@ spec:
           value: "100"
         - name: MAX_DAILY_TRADES
           value: "50"
+        # Unify the agent identity with the auth-disabled REST default user
+        # so /api/trades/agent and the chart show the bot's real trades.
+        - name: MCP_AGENT_USER_ID
+          value: "test_user_dev"
         volumeMounts:
         - name: data
           mountPath: /app/data
