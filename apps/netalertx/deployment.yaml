@@ -19,7 +19,7 @@ spec:
       nodeName: k3s-worker-01
       containers:
         - name: netalertx
-          image: ghcr.io/netalertx/netalertx:26.5
+          image: ghcr.io/netalertx/netalertx:26.6
           securityContext:
             capabilities:
               add:

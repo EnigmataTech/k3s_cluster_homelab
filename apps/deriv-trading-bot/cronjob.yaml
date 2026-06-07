@@ -23,7 +23,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: auto-trader
-              image: python:3.13-slim
+              image: python:3.14-slim
               command: ["python", "/scripts/deriv-auto-trade.py"]
               env:
                 - name: TRADING_API_URL
