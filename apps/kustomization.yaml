@@ -9,4 +9,3 @@ resources:
   - wazuh
   - netalertx
   - ip-speed
-  - tailscale-ingress
