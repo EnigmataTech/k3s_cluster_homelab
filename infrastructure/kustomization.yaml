@@ -7,3 +7,4 @@ resources:
   - ingress-nginx
   - monitoring
   - cloudflare-tunnel
+  - tailscale-operator
