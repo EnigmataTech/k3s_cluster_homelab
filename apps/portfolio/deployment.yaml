@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: portfolio
-        image: enigmata/portfolio:v4.0
+        image: enigmata/portfolio:v4.1
         imagePullPolicy: Always  # Pull from Docker Hub
         ports:
         - containerPort: 80
