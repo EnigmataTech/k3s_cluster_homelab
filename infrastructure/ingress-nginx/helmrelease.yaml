@@ -18,3 +18,5 @@ spec:
     controller:
       service:
         type: LoadBalancer
+        externalIPs:
+          - 100.123.93.18
